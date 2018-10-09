@@ -5,13 +5,7 @@
 #include <sys/types.h>
 #include <sys/shm.h>
 
-void childClosed(int sig);
-pid_t childPids[100];
-int avaliblePidSpaces[100] = {1};
-int currentProcesses = 0;
-
 int main (int argc, char *argv[]) {
-    signal(SIGCHLD, childClosed);
     int c;
     const int TOTALCHILDREN = 100;
     int maxNumberOfChildren = 5;
@@ -47,21 +41,11 @@ int main (int argc, char *argv[]) {
     int i;
     pid_t newForkPid;
     for(i = 0; i < TOTALCHILDREN; i++){
-        while (currentProcesses >= maxNumberOfChildren){}
         newForkPid = fork();
         if (newForkPid == 0){
             execlp("./worker","./worker", NULL);
 		    fprintf(stderr,"%s failed to exec worker!\n",argv[0]);
             exit(1);
-        }
-        int j;
-        for (j = 0; j < sizeof(childPids); j++){
-            if(avaliblePidSpaces[j] == 1){
-                avaliblePidSpaces[j] = 0;
-                childPids[j] = newForkPid;
-                currentProcesses++;
-                printf("++ %d current processes.\n", currentProcesses);
-            }
         }
     }
 
@@ -69,18 +53,4 @@ int main (int argc, char *argv[]) {
         printf("Sleeping.\n");
         sleep(5);
     }
-}
-
-void childClosed(int sig){
-    pid_t pid;
-    pid = wait(NULL);
-    int i;
-    for (i = 0; i < sizeof(childPids); i++){
-        if(childPids[i] == pid){
-            avaliblePidSpaces[i] = 1;
-        }
-    }
-    currentProcesses--;
-    printf("-- %d current processes.\n", currentProcesses);
-    printf("Child %d, closed.\n", pid);
 }
