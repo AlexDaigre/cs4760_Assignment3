@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 #include <sys/ipc.h>
 #include <sys/types.h>
 #include <sys/shm.h>
+
+
 
 int main (int argc, char *argv[]) {
     int c;
@@ -38,12 +41,27 @@ int main (int argc, char *argv[]) {
     printf("Log file name: %s\n", logFile);
     printf("Max run time: %d\n", maxRunTime);
 
+    int msgShmId = shmget(IPC_PRIVATE, sizeof(int)*4, IPC_CREAT | 0666);
+    if (msgShmId < 0) {
+        printf("shmget error in parrent\n");
+        exit(1);
+    }
+
+    int* msgShmPtr = (int *) shmat(msgShmId, NULL, 0);
+    if ((long) msgShmPtr == -1) {
+        printf("shmat error in parrent\n");
+        shmctl(msgShmId, IPC_RMID, NULL);
+        exit(1);
+    }
+
     int i;
     pid_t newForkPid;
     for(i = 0; i < TOTALCHILDREN; i++){
         newForkPid = fork();
         if (newForkPid == 0){
-            execlp("./worker","./worker", NULL);
+            char msgShmIdString[25];
+            sprintf(msgShmIdString, "%d", msgShmId);
+            execlp("./worker","./worker", msgShmIdString, NULL);
 		    fprintf(stderr,"%s failed to exec worker!\n",argv[0]);
             exit(1);
         }
