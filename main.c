@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <semaphore.h>
 #include <sys/ipc.h>
 #include <sys/types.h>
 #include <sys/shm.h>
@@ -54,12 +55,18 @@ int main (int argc, char *argv[]) {
         exit(1);
     }
 
+    msgShmPtr[0] = 0;
+    msgShmPtr[1] = 0;
+
+    #define SNAME "/mysem"
+    sem_t *sem = sem_open(SNAME, O_CREAT, 0644, 3);
+
     int i;
     pid_t newForkPid;
     for(i = 0; i < TOTALCHILDREN; i++){
         newForkPid = fork();
         if (newForkPid == 0){
-            char msgShmIdString[25];
+            char msgShmIdString[20];
             sprintf(msgShmIdString, "%d", msgShmId);
             execlp("./worker","./worker", msgShmIdString, NULL);
 		    fprintf(stderr,"%s failed to exec worker!\n",argv[0]);
@@ -67,8 +74,24 @@ int main (int argc, char *argv[]) {
         }
     }
 
-    while(1==1){
-        printf("Sleeping.\n");
-        sleep(5);
+    int closedChildren;
+    while(closedChildren < 100 && msgShmPtr[0] <= 2){
+        if ((msgShmPtr[2] > 0) || (msgShmPtr[3] > 0)){
+            pid_t childEnded = wait(NULL);
+            closedChildren++;
+            msgShmPtr[2] = 0;
+            msgShmPtr[3] = 0;
+            printf("Child %d has terminated at %d:%d with message %d:%d\n", childEnded, msgShmPtr[0], msgShmPtr[1], msgShmPtr[2], msgShmPtr[3]);
+        }
+        msgShmPtr[1]++;
+        if (msgShmPtr[1] >= 1000000000){
+            msgShmPtr[1] -= 1000000000;
+            msgShmPtr[0]++;
+        }
     }
+
+    sem_unlink(sem);    
+    shmctl(msgShmPtr, IPC_RMID, NULL);
+    shmdt(msgShmPtr);
+    exit(0);
 }
