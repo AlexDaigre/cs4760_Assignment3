@@ -7,13 +7,15 @@
 #include <sys/shm.h>
 
 void childClosed(int sig);
+void closeProgram(int sig);
 int currentProcesses = 0;
+const int TOTALCHILDREN = 100;
+pid_t createdProcesses[TOTALCHILDREN] = {0};
 
 int main (int argc, char *argv[]) {
     signal(SIGCHLD, childClosed);
+    signal(SIGINT, closeProgram);
     int c;
-    pid_t createdProcesses[100];
-    const int TOTALCHILDREN = 100;
     int maxProcesses = 5;
     int maxRunTime = 2;
     char* logFile = "logFile.txt";
@@ -83,4 +85,15 @@ int main (int argc, char *argv[]) {
 void childClosed(int sig){
     currentProcesses--;
     printf("Child Closed\n");
+}
+
+void closeProgram(int sig){
+    int i;
+    for(i = 0; i < TOTALCHILDREN; i++){
+        if(i > 0){
+            kill(createdProcesses[i], SIGINT);
+        }
+    }
+    shmctl(clockShmId, IPC_RMID, NULL);
+    shmdt(clockShmPtr);
 }
