@@ -6,12 +6,15 @@
 #include <sys/types.h>
 #include <sys/shm.h>
 
-
+void childClosed(int sig);
+int currentProcesses = 0;
 
 int main (int argc, char *argv[]) {
+    signal(SIGCHLD, childClosed);
     int c;
+    pid_t createdProcesses[100];
     const int TOTALCHILDREN = 100;
-    int maxNumberOfChildren = 5;
+    int maxProcesses = 5;
     int maxRunTime = 2;
     char* logFile = "logFile.txt";
 
@@ -22,7 +25,7 @@ int main (int argc, char *argv[]) {
                 exit(0);
                 break;
             case 's':
-                maxNumberOfChildren = atoi(optarg);
+                maxProcesses = atoi(optarg);
                 break;
             case 'l':
                 logFile = optarg;
@@ -37,7 +40,7 @@ int main (int argc, char *argv[]) {
         }
     }
 
-    printf("Number of children: %d\n", maxNumberOfChildren);
+    printf("Number of children: %d\n", maxProcesses);
     printf("Log file name: %s\n", logFile);
     printf("Max run time: %d\n", maxRunTime);
 
@@ -57,6 +60,8 @@ int main (int argc, char *argv[]) {
     int i;
     pid_t newForkPid;
     for(i = 0; i < TOTALCHILDREN; i++){
+        while (currentProcesses >= maxProcesses ){sleep(1);}
+        currentProcesses++;
         newForkPid = fork();
         if (newForkPid == 0){
             char msgShmIdString[25];
@@ -65,10 +70,17 @@ int main (int argc, char *argv[]) {
 		    fprintf(stderr,"%s failed to exec worker!\n",argv[0]);
             exit(1);
         }
+        createdProcesses[i] = newForkPid;
     }
 
     while(1==1){
         printf("Sleeping.\n");
         sleep(5);
     }
+}
+
+
+void childClosed(int sig){
+    currentProcesses--;
+    printf("Child Closed\n");
 }
