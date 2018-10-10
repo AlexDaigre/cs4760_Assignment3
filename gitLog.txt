@@ -1,0 +1,48 @@
+commit dea823cea82fee5df6b33aca1bd877e092fe41ec (HEAD -> master, origin/master)
+Author: RockThunderheart <alexdaigre@gmail.com>
+Date:   Wed Oct 10 12:13:20 2018 -0500
+
+    process tracking might be working, process limiting seems to be working
+
+commit b93a6d137a057c7e31d89713c06d11d1458a2ea7
+Author: RockThunderheart <alexdaigre@gmail.com>
+Date:   Wed Oct 10 12:04:57 2018 -0500
+
+    merged and compiled for linux
+
+commit d80bbdb20bae88f0b8382e5ad6d63c2dd523ebd9
+Merge: cb2aa09 8bf789d
+Author: RockThunderheart <alexdaigre@gmail.com>
+Date:   Wed Oct 10 11:56:45 2018 -0500
+
+    Merge branch 'master' of https://github.com/AlexDaigre/cs4760_Assignment3
+
+commit cb2aa09229684047bafbe21a78f9ec26604d5f6a
+Author: RockThunderheart <alexdaigre@gmail.com>
+Date:   Wed Oct 10 11:56:42 2018 -0500
+
+    old version
+
+commit 8bf789d8f278b4bb57d7aad5f380e9e087aa1335
+Author: Alexander Daigre <alex@Alexanders-MBP.dhcp.umsl.edu>
+Date:   Tue Oct 9 17:37:50 2018 -0500
+
+    working
+
+commit 24da7221932b3163cdd5743c14cf20167b15ec6d
+Author: Alexander Daigre <alex@Alexanders-MBP.dhcp.umsl.edu>
+Date:   Tue Oct 9 15:45:06 2018 -0500
+
+    removed process limiting code
+
+commit fdf8417f1333eb4e064d7110eb3d3bfa0ce6266d (origin/nonWorkingChildLimiting)
+Author: Alexander Daigre <alex@Alexanders-MBP.dhcp.umsl.edu>
+Date:   Tue Oct 9 15:41:29 2018 -0500
+
+    working on limiting processes
+
+commit a11181f478dfa7ac75c2ab5670b2acc7a925a24e
+Author: RockThunderheart <alexdaigre@gmail.com>
+Date:   Sat Oct 6 17:23:15 2018 -0500
+
+    inital commit, coppied from ass 2
