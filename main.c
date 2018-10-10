@@ -7,12 +7,20 @@
 #include <sys/types.h>
 #include <sys/shm.h>
 
-
+void childClosed(int sig);
+void closeProgram(int sig);
+int msgShmId;
+int* msgShmPtr;
+sem_t* sem;
+int currentProcesses = 0;
+const int TOTALCHILDREN = 100;
+pid_t createdProcesses[TOTALCHILDREN] = {0};
 
 int main (int argc, char *argv[]) {
+    signal(SIGCHLD, childClosed);
+    signal(SIGINT, closeProgram);
     int c;
-    const int TOTALCHILDREN = 100;
-    int maxNumberOfChildren = 5;
+    int maxProcesses = 5;
     int maxRunTime = 2;
     char* logFile = "logFile.txt";
 
@@ -23,7 +31,7 @@ int main (int argc, char *argv[]) {
                 exit(0);
                 break;
             case 's':
-                maxNumberOfChildren = atoi(optarg);
+                maxProcesses = atoi(optarg);
                 break;
             case 'l':
                 logFile = optarg;
@@ -38,17 +46,17 @@ int main (int argc, char *argv[]) {
         }
     }
 
-    printf("Number of children: %d\n", maxNumberOfChildren);
+    printf("Number of children: %d\n", maxProcesses);
     printf("Log file name: %s\n", logFile);
     printf("Max run time: %d\n", maxRunTime);
 
-    int msgShmId = shmget(IPC_PRIVATE, sizeof(int)*4, IPC_CREAT | 0666);
+    msgShmId = shmget(IPC_PRIVATE, sizeof(int)*4, IPC_CREAT | 0666);
     if (msgShmId < 0) {
         printf("shmget error in parrent\n");
         exit(1);
     }
 
-    int* msgShmPtr = (int *) shmat(msgShmId, NULL, 0);
+    msgShmPtr = (int *) shmat(msgShmId, NULL, 0);
     if ((long) msgShmPtr == -1) {
         printf("shmat error in parrent\n");
         shmctl(msgShmId, IPC_RMID, NULL);
@@ -59,11 +67,13 @@ int main (int argc, char *argv[]) {
     msgShmPtr[1] = 0;
 
     #define SNAME "/mysem"
-    sem_t *sem = sem_open(SNAME, O_CREAT, 0644, 3);
+    sem = sem_open(SNAME, O_CREAT, 0644, 3);
 
     int i;
     pid_t newForkPid;
     for(i = 0; i < TOTALCHILDREN; i++){
+        while (currentProcesses >= maxProcesses ){sleep(1);}
+        currentProcesses++;
         newForkPid = fork();
         if (newForkPid == 0){
             char msgShmIdString[20];
@@ -72,6 +82,7 @@ int main (int argc, char *argv[]) {
 		    fprintf(stderr,"%s failed to exec worker!\n",argv[0]);
             exit(1);
         }
+        createdProcesses[i] = newForkPid;
     }
 
     int closedChildren;
@@ -89,9 +100,22 @@ int main (int argc, char *argv[]) {
             msgShmPtr[0]++;
         }
     }
+}
 
-    sem_unlink(sem);    
-    shmctl(msgShmPtr, IPC_RMID, NULL);
+void childClosed(int sig){
+    currentProcesses--;
+    printf("Child Closed\n");
+}
+
+void closeProgram(int sig){
+    int i;
+    for(i = 0; i < TOTALCHILDREN; i++){
+        if(i > 0){
+            kill(createdProcesses[i], SIGINT);
+        }
+    }
+    shmctl(msgShmId, IPC_RMID, NULL);
     shmdt(msgShmPtr);
+    sem_unlink(sem);
     exit(0);
 }
