@@ -84,22 +84,6 @@ int main (int argc, char *argv[]) {
         closeProgram();
     }
 
-    // int i;
-    // pid_t newForkPid;
-    // for(i = 0; i < 100; i++){
-    //     while (currentProcesses >= maxProcesses ){sleep(1);}
-    //     currentProcesses++;
-    //     newForkPid = fork();
-    //     if (newForkPid == 0){
-    //         char msgShmIdString[20];
-    //         sprintf(msgShmIdString, "%d", msgShmId);
-    //         execlp("./worker","./worker", msgShmIdString, NULL);
-	// 	    fprintf(stderr,"%s failed to exec worker!\n",argv[0]);
-    //         exit(1);
-    //     }
-    //     createdProcesses[i] = newForkPid;
-    // }
-
     if (setInterrupt() == -1){
         printf("Failed to set up SIGPROF handler.\n");
     }
@@ -111,7 +95,7 @@ int main (int argc, char *argv[]) {
     int totalCreatedProcesses = 0;
     pid_t newForkPid;
     int closedChildren = 0;
-    while(1==1/*(closedChildren < 100)*/ /*&& (msgShmPtr[0] <= 2)*/){    
+    while((closedChildren < 100)){    
         if ((currentProcesses <= maxProcesses) && (totalCreatedProcesses < 100)){
             currentProcesses++;
             newForkPid = fork();

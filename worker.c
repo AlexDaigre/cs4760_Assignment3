@@ -31,8 +31,6 @@ int main (int argc, char *argv[]) {
         perror("Failed to open semphore for empty");
         closeProgram();
     }
-    // #define SNAME "/mysem"
-    // sem_t* sem = sem_open(SNAME, O_CREAT, 0644, 3);
 
     int terminationSeconds = msgShmPtr[0];
     int terminationNanoSeconds = msgShmPtr[1] + ((rand() % 10000));
@@ -42,25 +40,7 @@ int main (int argc, char *argv[]) {
         terminationSeconds++;
     }
     
-
     printf("Child %d determined exit time.\n", getpid());
-
-    // sem_wait(sem);
-    //     printf("  Child(%d) is in critical section.\n", getpid());
-    //     while (((terminationSeconds >= msgShmPtr[0]) || ((terminationSeconds == msgShmPtr[0]) && (terminationNanoSeconds >= msgShmPtr[1])))){
-    //         sem_post(sem);
-    //         sem_wait(sem);
-    //         // printf("  Child(%d) is in critical section.\n", getpid());
-    //     }
-    //     // printf("C: Child %d has terminated at system time %d:%d with termination time of %d:%d\n", getpid(), msgShmPtr[0], msgShmPtr[1], terminationSeconds, terminationNanoSeconds);
-    //     while ((msgShmPtr[2] > 0) && (msgShmPtr[3] > 0)){
-    //         sem_post(sem);
-    //         sem_wait(sem);
-    //         // printf("  Child(%d) is in critical section.\n", getpid());
-    //     }
-    //     msgShmPtr[2] = terminationSeconds;
-    //     msgShmPtr[3] = terminationNanoSeconds;
-    // sem_post(sem);   
     
     int exitFlag = 0;
     do{
