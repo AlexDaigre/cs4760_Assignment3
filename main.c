@@ -57,8 +57,11 @@ int main (int argc, char *argv[]) {
     }
 
     printf("Number of children: %d\n", maxProcesses);
+    fprintf(outputFile, "Number of children: %d\n", maxProcesses);
     printf("Log file name: %s\n", logFile);
+    fprintf(outputFile, "Log file name: %s\n", logFile);
     printf("Max run time: %d\n", maxRunTime);
+    fprintf(outputFile, "Max run time: %d\n", maxRunTime);
 
     msgShmId = shmget(IPC_PRIVATE, sizeof(int)*4, IPC_CREAT | 0666);
     if (msgShmId < 0) {
