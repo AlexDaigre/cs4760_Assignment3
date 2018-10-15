@@ -56,6 +56,12 @@ int main (int argc, char *argv[]) {
         }
     }
 
+    outputFile = fopen(logFile, "w");
+    if (outputFile == NULL){
+        printf("Failed to open output file.\n");
+        closeProgram();
+    }
+
     printf("Number of children: %d\n", maxProcesses);
     fprintf(outputFile, "Number of children: %d\n", maxProcesses);
     printf("Log file name: %s\n", logFile);
@@ -85,12 +91,6 @@ int main (int argc, char *argv[]) {
     sem = sem_open(SNAME, O_CREAT, 0644, 100);
     if (sem == SEM_FAILED) {
         perror("Failed to open semphore for empty");
-        closeProgram();
-    }
-
-    outputFile = fopen(logFile, "w");
-    if (outputFile == NULL){
-        printf("Failed to open output file.\n");
         closeProgram();
     }
 
