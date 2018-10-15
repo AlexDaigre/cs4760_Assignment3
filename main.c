@@ -1,5 +1,7 @@
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 #include <signal.h>
 #include <semaphore.h>
@@ -8,10 +10,15 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/shm.h>
+#include <sys/time.h>
 
 void childClosed(int sig);
 void closeProgramSignal(int sig);
+void interrupt(int sig, siginfo_t* info, void* context);
+int setTimer(double sec);
 void closeProgram();
+int setInterrupt();
+
 int msgShmId;
 int* msgShmPtr;
 sem_t* sem;
@@ -23,7 +30,7 @@ int main (int argc, char *argv[]) {
     signal(SIGINT, closeProgramSignal);
     int c;
     int maxProcesses = 5;
-    int maxRunTime = 2;
+    int maxRunTime = 10000;
     char* logFile = "logFile.txt";
 
     while ((c = getopt (argc, argv, "hs:l:t:")) != -1){
@@ -67,11 +74,15 @@ int main (int argc, char *argv[]) {
 
     msgShmPtr[0] = 0;
     msgShmPtr[1] = 0;
-    msgShmPtr[2] = 0;
-    msgShmPtr[3] = 0;
+    msgShmPtr[2] = -1;
+    msgShmPtr[3] = -1;
 
     #define SNAME "/mysem"
-    sem = sem_open(SNAME, O_CREAT, 0644, 3);
+    sem = sem_open(SNAME, O_CREAT, 0644, 100);
+    if (sem == SEM_FAILED) {
+        perror("Failed to open semphore for empty");
+        closeProgram();
+    }
 
     // int i;
     // pid_t newForkPid;
@@ -89,10 +100,18 @@ int main (int argc, char *argv[]) {
     //     createdProcesses[i] = newForkPid;
     // }
 
+    if (setInterrupt() == -1){
+        printf("Failed to set up SIGPROF handler.\n");
+    }
+
+    if (setTimer(maxRunTime) == -1){
+        printf("Failed to set up SIGPROF handler.\n");
+    }
+
     int totalCreatedProcesses = 0;
     pid_t newForkPid;
     int closedChildren = 0;
-    while((closedChildren < 100) /*&& (msgShmPtr[0] <= 2)*/){    
+    while(1==1/*(closedChildren < 100)*/ /*&& (msgShmPtr[0] <= 2)*/){    
         if ((currentProcesses <= maxProcesses) && (totalCreatedProcesses < 100)){
             currentProcesses++;
             newForkPid = fork();
@@ -106,12 +125,12 @@ int main (int argc, char *argv[]) {
             createdProcesses[totalCreatedProcesses] = newForkPid;
             totalCreatedProcesses++;
         }
-        if ((msgShmPtr[2] > 0) || (msgShmPtr[3] > 0)){
+        if ((msgShmPtr[2] >= 0) && (msgShmPtr[3] >= 0)){
             pid_t childEnded = wait(NULL);     
             printf("P: Child %d has terminated at system time %d:%d with termination time of %d:%d\n", childEnded, msgShmPtr[0], msgShmPtr[1], msgShmPtr[2], msgShmPtr[3]);
             closedChildren++;
-            msgShmPtr[2] = 0;
-            msgShmPtr[3] = 0;
+            msgShmPtr[2] = -1;
+            msgShmPtr[3] = -1;
         }
         msgShmPtr[1]++;
         if (msgShmPtr[1] >= 1000000000){
@@ -131,11 +150,30 @@ void closeProgramSignal(int sig){
     closeProgram();
 }
 
+int setInterrupt(){
+    struct sigaction act;
+    act.sa_sigaction = interrupt;
+    act.sa_flags = 0;
+    return ((sigemptyset(&act.sa_mask) == -1) || (sigaction(SIGALRM, &act, NULL) == -1));
+}
+
+void interrupt(int signo, siginfo_t* info, void* context){
+    closeProgram();
+}
+
+int setTimer(double sec){
+    struct itimerval value;
+    value.it_interval.tv_sec = sec;
+    value.it_interval.tv_usec = 0;
+    value.it_value = value.it_interval;
+    return (setitimer(ITIMER_PROF, &value,  NULL));
+}
+
 void closeProgram(){
     int i;
     for(i = 0; i < 100; i++){
         if(i > 0){
-            if(createdProcesses[i] == -5){
+            if(createdProcesses[i] != -5){
                 kill(createdProcesses[i], SIGINT);
             }
         }
