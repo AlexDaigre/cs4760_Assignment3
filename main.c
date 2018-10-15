@@ -93,6 +93,7 @@ int main (int argc, char *argv[]) {
     }
 
     int totalCreatedProcesses = 0;
+    int totalClosedProcesses = 0;
     pid_t newForkPid;
     int closedChildren = 0;
     while((closedChildren < 100)){    
@@ -111,7 +112,8 @@ int main (int argc, char *argv[]) {
         }
         if ((msgShmPtr[2] >= 0) && (msgShmPtr[3] >= 0)){
             pid_t childEnded = wait(NULL);     
-            printf("P: Child %d has terminated at system time %d:%d with termination time of %d:%d\n", childEnded, msgShmPtr[0], msgShmPtr[1], msgShmPtr[2], msgShmPtr[3]);
+            totalClosedProcesses++;
+            printf("%d P: Child %d has terminated at system time %d:%d with termination time of %d:%d\n", totalClosedProcesses, childEnded, msgShmPtr[0], msgShmPtr[1], msgShmPtr[2], msgShmPtr[3]);
             closedChildren++;
             msgShmPtr[2] = -1;
             msgShmPtr[3] = -1;
@@ -127,7 +129,7 @@ int main (int argc, char *argv[]) {
 
 void childClosed(int sig){
     currentProcesses--;
-    printf("Child Closed\n");
+    // printf("Child Closed\n");
 }
 
 void closeProgramSignal(int sig){
