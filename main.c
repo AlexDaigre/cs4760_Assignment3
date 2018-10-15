@@ -37,7 +37,7 @@ int main (int argc, char *argv[]) {
     while ((c = getopt (argc, argv, "hs:l:t:")) != -1){
         switch (c){
             case 'h':
-                printf("Help\n");
+                printf("Options:\n-h: Help\n-s: Limits the number of concurrent user proceesses to the given number(int).\n-l: The given argument(string) specifies the neame of the logfile.\n-t: The given number(int) specifies the max amount of time the program will run for.\n");
                 exit(0);
                 break;
             case 's':
