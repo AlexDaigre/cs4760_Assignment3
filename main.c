@@ -24,6 +24,7 @@ int* msgShmPtr;
 sem_t* sem;
 int currentProcesses = 0;
 pid_t createdProcesses[100] = {-5};
+FILE* outputFile;
 
 int main (int argc, char *argv[]) {
     signal(SIGCHLD, childClosed);
@@ -84,12 +85,20 @@ int main (int argc, char *argv[]) {
         closeProgram();
     }
 
+    outputFile = fopen(logFile, "w");
+    if (outputFile == NULL){
+        printf("Failed to open output file.\n");
+        closeProgram();
+    }
+
     if (setInterrupt() == -1){
         printf("Failed to set up SIGPROF handler.\n");
+        closeProgram();
     }
 
     if (setTimer(maxRunTime) == -1){
-        printf("Failed to set up SIGPROF handler.\n");
+        printf("Failed to set up SIGPROF timer.\n");
+        closeProgram();
     }
 
     int totalCreatedProcesses = 0;
@@ -114,6 +123,7 @@ int main (int argc, char *argv[]) {
             pid_t childEnded = wait(NULL);     
             totalClosedProcesses++;
             printf("%d P: Child %d has terminated at system time %d:%d with termination time of %d:%d\n", totalClosedProcesses, childEnded, msgShmPtr[0], msgShmPtr[1], msgShmPtr[2], msgShmPtr[3]);
+            fprintf(outputFile, "%d P: Child %d has terminated at system time %d:%d with termination time of %d:%d\n", totalClosedProcesses, childEnded, msgShmPtr[0], msgShmPtr[1], msgShmPtr[2], msgShmPtr[3]);
             closedChildren++;
             msgShmPtr[2] = -1;
             msgShmPtr[3] = -1;
@@ -167,5 +177,6 @@ void closeProgram(){
     shmctl(msgShmId, IPC_RMID, NULL);
     shmdt(msgShmPtr);
     sem_unlink(SNAME);
+    fclose(outputFile);
     exit(0);
 }
