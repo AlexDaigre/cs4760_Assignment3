@@ -19,7 +19,7 @@ int main (int argc, char *argv[]) {
     }
 
     #define SNAME "/mysem"
-    sem_t *sem = sem_open(SNAME, 0);
+    sem_t* sem = sem_open(SNAME, 0);
 
     int terminationSeconds = msgShmPtr[0];
     int terminationNanoSeconds = msgShmPtr[1] + 100000;
@@ -34,6 +34,7 @@ int main (int argc, char *argv[]) {
     if (terminationSeconds >= msgShmPtr[0] || (terminationSeconds == msgShmPtr[0] && terminationNanoSeconds >= msgShmPtr[1])){
         
     }
+    printf("  Child(%d) is exiting critical section.\n", getpid());
     sem_post(sem);   
 
     printf("Child %d exiting\n", getpid());
