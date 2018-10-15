@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "ipc.h": "c"
+        "ipc.h": "c",
+        "semaphore.h": "c"
     }
 }

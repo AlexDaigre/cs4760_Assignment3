@@ -3,22 +3,24 @@
 #include <unistd.h>
 #include <signal.h>
 #include <semaphore.h>
+#include <fcntl.h>
 #include <sys/ipc.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/shm.h>
 
 void childClosed(int sig);
-void closeProgram(int sig);
+void closeProgramSignal(int sig);
+void closeProgram();
 int msgShmId;
 int* msgShmPtr;
 sem_t* sem;
 int currentProcesses = 0;
-const int TOTALCHILDREN = 100;
-pid_t createdProcesses[TOTALCHILDREN] = {0};
+pid_t createdProcesses[100] = {-5};
 
 int main (int argc, char *argv[]) {
     signal(SIGCHLD, childClosed);
-    signal(SIGINT, closeProgram);
+    signal(SIGINT, closeProgramSignal);
     int c;
     int maxProcesses = 5;
     int maxRunTime = 2;
@@ -65,34 +67,51 @@ int main (int argc, char *argv[]) {
 
     msgShmPtr[0] = 0;
     msgShmPtr[1] = 0;
+    msgShmPtr[2] = 0;
+    msgShmPtr[3] = 0;
 
     #define SNAME "/mysem"
     sem = sem_open(SNAME, O_CREAT, 0644, 3);
 
-    int i;
-    pid_t newForkPid;
-    for(i = 0; i < TOTALCHILDREN; i++){
-        while (currentProcesses >= maxProcesses ){sleep(1);}
-        currentProcesses++;
-        newForkPid = fork();
-        if (newForkPid == 0){
-            char msgShmIdString[20];
-            sprintf(msgShmIdString, "%d", msgShmId);
-            execlp("./worker","./worker", msgShmIdString, NULL);
-		    fprintf(stderr,"%s failed to exec worker!\n",argv[0]);
-            exit(1);
-        }
-        createdProcesses[i] = newForkPid;
-    }
+    // int i;
+    // pid_t newForkPid;
+    // for(i = 0; i < 100; i++){
+    //     while (currentProcesses >= maxProcesses ){sleep(1);}
+    //     currentProcesses++;
+    //     newForkPid = fork();
+    //     if (newForkPid == 0){
+    //         char msgShmIdString[20];
+    //         sprintf(msgShmIdString, "%d", msgShmId);
+    //         execlp("./worker","./worker", msgShmIdString, NULL);
+	// 	    fprintf(stderr,"%s failed to exec worker!\n",argv[0]);
+    //         exit(1);
+    //     }
+    //     createdProcesses[i] = newForkPid;
+    // }
 
-    int closedChildren;
-    while(closedChildren < 100 && msgShmPtr[0] <= 2){
+    int totalCreatedProcesses = 0;
+    pid_t newForkPid;
+    int closedChildren = 0;
+    while((closedChildren < 100) /*&& (msgShmPtr[0] <= 2)*/){    
+        if ((currentProcesses <= maxProcesses) && (totalCreatedProcesses < 100)){
+            currentProcesses++;
+            newForkPid = fork();
+            if (newForkPid == 0){
+                char msgShmIdString[20];
+                sprintf(msgShmIdString, "%d", msgShmId);
+                execlp("./worker","./worker", msgShmIdString, NULL);
+                fprintf(stderr,"%s failed to exec worker!\n",argv[0]);
+                exit(1);
+            }
+            createdProcesses[totalCreatedProcesses] = newForkPid;
+            totalCreatedProcesses++;
+        }
         if ((msgShmPtr[2] > 0) || (msgShmPtr[3] > 0)){
-            pid_t childEnded = wait(NULL);
+            pid_t childEnded = wait(NULL);     
+            printf("P: Child %d has terminated at system time %d:%d with termination time of %d:%d\n", childEnded, msgShmPtr[0], msgShmPtr[1], msgShmPtr[2], msgShmPtr[3]);
             closedChildren++;
             msgShmPtr[2] = 0;
             msgShmPtr[3] = 0;
-            printf("Child %d has terminated at %d:%d with message %d:%d\n", childEnded, msgShmPtr[0], msgShmPtr[1], msgShmPtr[2], msgShmPtr[3]);
         }
         msgShmPtr[1]++;
         if (msgShmPtr[1] >= 1000000000){
@@ -100,6 +119,7 @@ int main (int argc, char *argv[]) {
             msgShmPtr[0]++;
         }
     }
+    closeProgram();
 }
 
 void childClosed(int sig){
@@ -107,15 +127,21 @@ void childClosed(int sig){
     printf("Child Closed\n");
 }
 
-void closeProgram(int sig){
+void closeProgramSignal(int sig){
+    closeProgram();
+}
+
+void closeProgram(){
     int i;
-    for(i = 0; i < TOTALCHILDREN; i++){
+    for(i = 0; i < 100; i++){
         if(i > 0){
-            kill(createdProcesses[i], SIGINT);
+            if(createdProcesses[i] == -5){
+                kill(createdProcesses[i], SIGINT);
+            }
         }
     }
     shmctl(msgShmId, IPC_RMID, NULL);
     shmdt(msgShmPtr);
-    sem_unlink(sem);
+    sem_unlink(SNAME);
     exit(0);
 }
