@@ -25,7 +25,7 @@ int main (int argc, char *argv[]) {
         exit(1);
     }
 
-    #define SNAME "/mysem"
+    #define SNAME "/daigreSem432098786"
     sem_t* sem = sem_open(SNAME, 0);
     if (sem == SEM_FAILED) {
         perror("Failed to open semphore for empty");

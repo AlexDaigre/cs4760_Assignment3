@@ -78,7 +78,7 @@ int main (int argc, char *argv[]) {
     msgShmPtr[2] = -1;
     msgShmPtr[3] = -1;
 
-    #define SNAME "/mysem"
+    #define SNAME "/daigreSem432098786"
     sem = sem_open(SNAME, O_CREAT, 0644, 100);
     if (sem == SEM_FAILED) {
         perror("Failed to open semphore for empty");
