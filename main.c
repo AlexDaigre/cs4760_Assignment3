@@ -30,7 +30,7 @@ int main (int argc, char *argv[]) {
     signal(SIGINT, closeProgramSignal);
     int c;
     int maxProcesses = 5;
-    int maxRunTime = 10000;
+    int maxRunTime = 2;
     char* logFile = "logFile.txt";
 
     while ((c = getopt (argc, argv, "hs:l:t:")) != -1){
