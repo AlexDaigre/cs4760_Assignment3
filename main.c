@@ -69,7 +69,20 @@ int main (int argc, char *argv[]) {
     printf("Max run time: %d\n", maxRunTime);
     fprintf(outputFile, "Max run time: %d\n", maxRunTime);
 
-    msgShmId = shmget(IPC_PRIVATE, sizeof(int)*4, IPC_CREAT | 0666);
+    key_t sharedMemoryKey;
+    if (-1 != open("/tmp/daigreTmp677543", O_CREAT, 0777)) {
+        sharedMemoryKey = ftok("/tmp/daigreTmp677543", 0);
+     } else {
+        printf("ftok error in parrent\n");
+        exit(1);
+    }
+    // key_t sharedMemoryKey = ftok("/daigreTmp", 1);
+    // if (sharedMemoryKey < 0) {
+    //     printf("ftok error in parrent\n");
+    //     exit(1);
+    // }
+
+    msgShmId = shmget(sharedMemoryKey, sizeof(int)*4, IPC_CREAT | 0666);
     if (msgShmId < 0) {
         printf("shmget error in parrent\n");
         exit(1);
@@ -89,6 +102,7 @@ int main (int argc, char *argv[]) {
 
     #define SNAME "/daigreSem432098786"
     sem = sem_open(SNAME, O_CREAT, 0644, 100);
+    
     if (sem == SEM_FAILED) {
         perror("Failed to open semphore for empty");
         closeProgram();
